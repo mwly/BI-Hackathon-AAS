@@ -1,6 +1,6 @@
 services:
   registry:
-    image: eclipsebasyx/aas-registry:1.4.0
+    image: eclipsebasyx/aas-registry:1.5.1
     container_name: AAS-POC-Registry
     ports:
         - 8082:4000
@@ -33,7 +33,7 @@ services:
       - 27017:27017
 
   aas:
-    image: eclipsebasyx/aas-server:1.4.0
+    image: eclipsebasyx/aas-server:1.5.1
     container_name: AAS-POC-aas
     ports:
         - 4001:4001
