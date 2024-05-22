@@ -1,17 +1,39 @@
 services:
-  registry:
-    image: eclipsebasyx/aas-registry:1.5.1
-    container_name: AAS-POC-Registry
+#  registry:
+#    image: eclipsebasyx/aas-registry:1.5.1
+#    container_name: AAS-POC-Registry
+#    ports:
+#        - 8082:4000
+#    environment:
+#        - basyxregistry_registry_backend=MongoDB
+#        - basyxcontext_contextpath=/registry
+#        - basyxcontext_contextport=4000
+#        - basyxcontext_accesscontrolalloworigin=*
+#        - basyxmongodb_dbname=admin
+#        - basyxmongodb_dbconnectionstring=mongodb://mongo:27017/
+#        - basyxmongodb_dbcollectionregistry=basyxregistry 
+#    depends_on:
+#      mongo:
+#        condition: service_healthy
+
+  aas-registry:
+    image: eclipsebasyx/aas-registry-log-mongodb:2.0.0-SNAPSHOT
+    container_name: AAS-POC-AAS-Registry
     ports:
-        - 8082:4000
-    environment:
-        - basyxregistry_registry_backend=MongoDB
-        - basyxcontext_contextpath=/registry
-        - basyxcontext_contextport=4000
-        - basyxcontext_accesscontrolalloworigin=*
-        - basyxmongodb_dbname=admin
-        - basyxmongodb_dbconnectionstring=mongodb://mongo:27017/
-        - basyxmongodb_dbcollectionregistry=basyxregistry 
+      - 8082:8080
+    volumes:
+      - ./aas-registry.yml:/workspace/config/application.yml
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  sm-registry:
+    image: eclipsebasyx/submodel-registry-log-mongodb:2.0.0-SNAPSHOT
+    container_name: AAS-POC-SM-Registry
+    ports:
+      - 8083:8080
+    volumes:
+      - ./sm-registry.yml:/workspace/config/application.yml
     depends_on:
       mongo:
         condition: service_healthy
@@ -19,45 +41,113 @@ services:
   mongo:
     image: mongo:5.0.10
     container_name: AAS-POC-mongodb
+    # Provide mongo config
+    restart: always
     environment:
-        - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
-        - ME_CONFIG_MONGODB_ADMINPASSWORD= admin
-        - ME_CONFIG_MONGODB_URL= mongodb://admin:admin@mongo:27017/
+      MONGO_INITDB_ROOT_USERNAME: mongoAdmin
+      MONGO_INITDB_ROOT_PASSWORD: mongoPassword
+    # Set health checks to wait until mongo has started
+    #volumes:
+    # -  ./data-vol:/data/db 
     healthcheck:
       test: mongo
       interval: 10s
+      start_period: 5s
       retries: 5
-      start_period: 1s
-      timeout: 5s
+    # Maps tcp port to host
     ports:
       - 27017:27017
 
-  aas:
-    image: eclipsebasyx/aas-server:1.5.1
-    container_name: AAS-POC-aas
+
+  mqtt:
+    image: eclipse-mosquitto:2.0.15
+    container_name: AAS-POC-mqtt
     ports:
-        - 4001:4001
-    environment:
-        - basyxaas_registry_path=http://registry:4000/registry/
-        - basyxaas_aas_backend=MongoDB
-        - basyxcontext_contextpath=/aasServer
-        - basyxcontext_contextport=4001
-        - basyxaas_aas_source=aasx/01_Festo.aasx
-        - waiting_for=[{"host":"registry","port":"4000"}]
-        - basyxcontext_accesscontrolalloworigin=*
-        - basyxmongodb_dbname=admin
-        - basyxmongodb_dbconnectionstring=mongodb://mongo:27017/
-        - basyxmongodb_dbcollectionaas=basyxaas
-        - basyxmongodb_dbcollectionsubmodels=basyxsubmodel 
+      - 1884:1884
+    volumes:
+      - ./mosquitto:/mosquitto/config
+    healthcheck:
+      test: ["CMD-SHELL", mosquitto_sub -p 1884 -t 'topic' -C 1 -E -i probe -W 3]
+      interval: 5s
+      retries: 3
+      start_period: 1s
+      timeout: 10s   
+
+
+  aas-env:
+    image: eclipsebasyx/aas-environment:2.0.0-SNAPSHOT
+    container_name: AAS-POC-ENV
+    volumes:
+      - ./aas-env.properties:/application/application.properties
+      - ./aas:/application/aas
+    ports:
+        - 8081:8081
+    depends_on:
+        mongo:
+            condition: service_healthy
+        mqtt:
+            condition: service_healthy
+        aas-registry:
+            condition: service_healthy
+        sm-registry:
+            condition: service_healthy
+
+#  aas:
+#    image: eclipsebasyx/aas-server:1.5.1
+#    container_name: AAS-POC-aas
+#    ports:
+#        - 8081:4001
+#    environment:
+#        - basyxaas_registry_path=http://registry:4000/registry/
+#        - basyxaas_aas_backend=MongoDB
+#        - basyxcontext_contextpath=/aasServer
+#        - basyxcontext_contextport=4001
+#        - basyxaas_aas_source=aasx/01_Festo.aasx
+#        - waiting_for=[{"host":"registry","port":"4000"}]
+#        - basyxcontext_accesscontrolalloworigin=*
+#        - basyxmongodb_dbname=admin
+#        - basyxmongodb_dbconnectionstring=mongodb://mongo:27017/
+#        - basyxmongodb_dbcollectionaas=basyxaas
+#        - basyxmongodb_dbcollectionsubmodels=basyxsubmodel 
+#    depends_on:
+#      mongo:
+#        condition: service_healthy
+
+  aas-discovery:
+    image: eclipsebasyx/aas-discovery:2.0.0-SNAPSHOT
+    container_name: AAS-POC-discovery
+    ports:
+      - 8084:8081
+    volumes:
+      - ./aas-discovery.properties:/application/application.properties
     depends_on:
       mongo:
         condition: service_healthy
 
-  gui: 
+#  gui: 
+#    image: eclipsebasyx/aas-gui:v2-240515
+#    container_name: AAS-POC-aasGui
+#    ports:
+#        - 3001:3000
+#    environment:
+#        -  VITE_REGISTRY_PATH="http://localhost:4000/registry"
+
+  aas-web-ui_v2:
     image: eclipsebasyx/aas-gui:v2-240515
-    container_name: AAS-POC-aasGui
+    container_name: aas-web-ui_v2
     ports:
-        - 3001:3000
+      - "3000:3000"
     environment:
-        -  VITE_REGISTRY_PATH="http://localhost:4000/registry"
+      AAS_REGISTRY_PATH: "http://localhost:8082"
+      SUBMODEL_REGISTRY_PATH: "http://localhost:8083"
+      AAS_DISCOVERY_PATH: "http://localhost:8084"
+      AAS_REPO_PATH: "http://localhost:8081/shells"
+      SUBMODEL_REPO_PATH: "http://localhost:8081/submodels"
+      CD_REPO_PATH: "http://localhost:8081/concept-descriptions"
+    restart: always
+    depends_on:
+      aas-env:
+        condition: service_healthy
+
+
 
