@@ -54,8 +54,8 @@ services:
         condition: service_healthy
 
   gui: 
-    image: eclipsebasyx/aas-gui:v230703
-    container_name: AAS-POC-aasGui 
+    image: eclipsebasyx/aas-gui:v2-240515
+    container_name: AAS-POC-aasGui
     ports:
         - 3001:3000
     environment:
