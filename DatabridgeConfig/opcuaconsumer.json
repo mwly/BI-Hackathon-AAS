@@ -1,0 +1,10 @@
+[
+	{
+		"uniqueId": "source://DeviceSet/MainBrain/DataBlocksInstance/SensordatenDB/Static/Temperatur_Gewächshaus",
+		"serverUrl": "URL",
+		"serverPort": 4840,
+		"pathToService": "",
+		"nodeInformation": "ns=3;s=\"Sensordaten_DB\".\"Temperatur_Gewächshaus\"",
+		"requestPublishingInterval": 50
+	  }
+]

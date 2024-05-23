@@ -150,4 +150,19 @@ services:
         condition: service_healthy
 
 
+  databridge:
+    image: eclipsebasyx/databridge:1.0.0-SNAPSHOT
+    container_name: databridge
+    volumes:
+      - "./DatabridgeConfig:/usr/share/config"
+    depends_on:
+      aas-env:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      aas-registry:
+        condition: service_healthy
+    restart: always
+
+
 

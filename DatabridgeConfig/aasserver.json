@@ -1,0 +1,7 @@
+[
+	{
+		"uniqueId": "aHR0cDovL2FjcGx0Lm9yZy9TdWJtb2RlbHMvQXNzZXRzL1Rlc3RBc3NldC9CaWxsT2ZNYXRlcmlhbA/ExampleProperty2",
+		"submodelEndpoint": "http://localhost:8081/submodels/aHR0cDovL2FjcGx0Lm9yZy9TdWJtb2RlbHMvQXNzZXRzL1Rlc3RBc3NldC9CaWxsT2ZNYXRlcmlhbA",
+		"idShortPath": "submodel-elements/ExampleEntity.ExampleProperty2"
+	}
+]
